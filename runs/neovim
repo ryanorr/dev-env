@@ -1,2 +1,9 @@
 #!/usr/bin/env bash
-echo "hello from neovim"
+
+git clone --branch v0.10.4 git@github.com:neovim/neovim.git $HOME/personal/neovim
+
+brew install cmake gettext lua luarocks
+
+cd $HOME/personal/neovim
+make CMAKE_BUILD_TYPE=RelWithDebInfo
+sudo make install
