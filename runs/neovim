@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 git clone --branch v0.10.4 git@github.com:neovim/neovim.git $HOME/personal/neovim
-
 brew install cmake gettext lua luarocks
 
 cd $HOME/personal/neovim
