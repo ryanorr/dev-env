@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# Detect the operating system
+if [[ "$(uname)" == "Darwin" ]]; then
+	echo "Detected macOS. Using Homebrew."
+elif [ -f /etc/os-release ]; then
+	. /etc/os-release
+	if [[ "$ID" == "ubuntu" ]]; then
+		echo "Detected Ubuntu. Using apt-get."
+		sudo apt-get update
+		sudo apt-get -y install git ripgrep pavucontrol xclip jq tldr shutter python3-pip
+	elif [[ "$ID" == "rocky" || "$ID_LIKE" == *"rhel"* ]]; then
+		echo "Detected Rocky Linux or a RHEL-based system. Using dnf."
+		sudo dnf install -y git ripgrep pavucontrol xclip jq tldr shutter python3-pip
+	else
+		echo "Unsupported Linux distribution: $ID"
+		exit 1
+	fi
+else
+	echo "Unsupported operating system."
+	exit 1
+fi
+
+git clone git@github.com:junegunn/fzf.git $HOME/personal/fzf
+$HOME/personal/fzf/install

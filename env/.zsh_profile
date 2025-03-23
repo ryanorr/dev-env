@@ -1,0 +1,25 @@
+export XDG_CONFIG_HOME=$HOME/.config
+VIM="nvim"
+alias vim="nvim"
+alias vi="nvim"
+DEV_ENV=$HOME/dev
+
+addToPath() {
+    if [[ "$PATH" != *"$1"* ]]; then
+        export PATH=$PATH:$1
+    fi
+}
+
+addToPathFront() {
+    if [[ ! -z "$2" ]] || [[ "$PATH" != *"$1"* ]]; then
+        export PATH=$1:$PATH
+    fi
+}
+
+addToPath $HOME/.local/scripts
+
+export mf1="rorr@192.168.1.106"
+export mf2="rorr@192.168.1.191"
+export mf3="rorr@192.168.1.77"
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
