@@ -4,16 +4,16 @@ set -e
 # Detect the operating system
 if [[ "$(uname)" == "Darwin" ]]; then
 	echo "Detected macOS. Using Homebrew."
-	brew install cmake gettext lua luarocks
+	brew install automake pkg-config libevent utf8proc
 elif [ -f /etc/os-release ]; then
 	. /etc/os-release
 	if [[ "$ID" == "ubuntu" ]]; then
 		echo "Detected Ubuntu. Using apt-get."
 		sudo apt-get update
-		sudo apt-get install -y cmake gettext liblua luarocks
+		sudo apt-get install -y automake pkg-config libevent-dev libutf8proc-de
 	elif [[ "$ID" == "rocky" || "$ID_LIKE" == *"rhel"* ]]; then
 		echo "Detected Rocky Linux or a RHEL-based system. Using dnf."
-		sudo dnf install -y cmake gettext lua-devel luarocks
+		sudo dnf install -y automake pkgconfig libevent-devel utf8proc-devel
 	else
 		echo "Unsupported Linux distribution: $ID"
 		exit 1
@@ -23,10 +23,13 @@ else
 	exit 1
 fi
 
-# Clone the Neovim repo
-git clone --branch v0.10.4 git@github.com:neovim/neovim.git $HOME/personal/neovim
+# Clone the tmux repo
+git clone https://github.com/tmux/tmux.git $HOME/personal/tmux
 
-# Build and install neovim
-cd $HOME/personal/neovim
-make CMAKE_BUILD_TYPE=RelWithDebInfo
-sudo make install
+# Build tmux
+cd $HOME/personal/tmux
+sh autogen.sh
+./configure --enable-utf8proc && make
+
+# Copy the tmux binary to a directory in the PATH
+sudo cp $HOME/personal/tmux/tmux /usr/local/bin/tmux
