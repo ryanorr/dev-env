@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
 
 script_dir="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
-dry="0"
+dry_run="0"
+
+# setting config location
+if [ -z "$XDG_CONFIG_HOME" ]; then
+    echo "no xdg config hom"
+    echo "using ~/.config"
+    XDG_CONFIG_HOME=$HOME/.config
+fi
 
 while [[ $# > 0 ]]; do
     if [[ "$1" == "--dry" ]]; then
-        dry="1"
+        dry_run="1"
     fi
     shift
 done
 
 log() {
-    if [[ $dry == "1" ]]; then
+    if [[ $dry_run == "1" ]]; then
         echo "[DRY_RUN]: $@"
     else
         echo "$@"
@@ -20,14 +27,14 @@ log() {
 
 execute() {
     log "execute: $@"
-    if [[ $dry == "1" ]]; then
+    if [[ $dry_run == "1" ]]; then
         return
     fi
 
     "$@"
 }
 
-log "--------- dev-env ---------"
+log "env: $script_dir"
 
 cd $script_dir
 
@@ -42,14 +49,42 @@ copy_dir() {
     popd > /dev/null
 }
 
-copy_file() {
-    from=$1
-    to=$2
-    name=$(basename $from)
-
-    execute rm $to/$name
-    execute cp $from $to/$name
+copy() {
+    log "removing: $2"
+    if [[ $dry_run == "0" ]]; then
+        rm $2
+    fi
+    log "copying: $1 to $2"
+    if [[ $dry_run == "0" ]]; then
+        cp $1 $2
+    fi
 }
 
-copy_dir .config "$HOME/.config"
-copy_dir .local "$HOME/.local"
+update_files() {
+    log "copying over files from: $1"
+    pushd $1 &> /dev/null
+    (
+        configs=`find . -mindepth 1 -maxdepth 1 -type d`
+        for c in $configs; do
+            directory=${2%/}/${c#./}
+            log "    removing: rm -rf $directory"
+
+            if [[ $dry_run == "0" ]]; then
+                rm -rf $directory
+            fi
+
+            log "    copying env: cp $c $2"
+            if [[ $dry_run == "0" ]]; then
+                cp -r ./$c $2
+            fi
+        done
+
+    )
+    popd &> /dev/null
+}
+
+update_files $script_dir/env/.config $XDG_CONFIG_HOME
+update_files $script_dir/env/.local $HOME/.local
+
+copy $script_dir/env/.zsh_profile $HOME/.zsh_profile
+copy $script_dir/env/.gitconfig $HOME/.gitconfig
