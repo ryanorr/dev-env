@@ -24,7 +24,7 @@ else
 fi
 
 # Clone the Neovim repo
-git clone --branch v0.10.4 git@github.com:neovim/neovim.git $HOME/personal/neovim
+git clone --branch v0.11.0 git@github.com:neovim/neovim.git $HOME/personal/neovim
 
 # Build and install neovim
 cd $HOME/personal/neovim

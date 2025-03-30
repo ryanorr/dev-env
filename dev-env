@@ -1,42 +1,60 @@
 #!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
 
+# Determine script directory
 script_dir="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
 dry_run="0"
 
-# setting config location
-if [ -z "$XDG_CONFIG_HOME" ]; then
-    echo "no xdg config hom"
-    echo "using ~/.config"
-    XDG_CONFIG_HOME=$HOME/.config
+# Ensure XDG_CONFIG_HOME is set
+if [ -z "${XDG_CONFIG_HOME:-}" ]; then
+    echo "XDG_CONFIG_HOME is not set; defaulting to ~/.config"
+    XDG_CONFIG_HOME="$HOME/.config"
 fi
 
-while [[ $# > 0 ]]; do
-    if [[ "$1" == "--dry" ]]; then
-        dry_run="1"
-    fi
+# Processing arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry)
+            dry_run="1"
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            ;;
+    esac
     shift
 done
 
+# Logging function
 log() {
-    if [[ $dry_run == "1" ]]; then
-        echo "[DRY_RUN]: $@"
+    if [[ "$dry_run" == "1" ]]; then
+        echo "[DRY_RUN]: $*"
     else
-        echo "$@"
+        echo "$*"
     fi
 }
 
 execute() {
-    log "execute: $@"
-    if [[ $dry_run == "1" ]]; then
+    log "execute: $*"
+    if [[ "$dry_run" == "1" ]]; then
         return
     fi
-
-    "$@"
+    "$*"
 }
 
 log "env: $script_dir"
-
 cd $script_dir
+
+copy() {
+    log "removing: $2"
+    if [[ "$dry_run" == "0" ]]; then
+        rm -f "$2"
+    fi
+    log "copying: $1 to $2"
+    if [[ "$dry_run" == "0" ]]; then
+        cp "$1" "$2"
+    fi
+}
 
 copy_dir() {
     pushd $1 > /dev/null
@@ -49,42 +67,24 @@ copy_dir() {
     popd > /dev/null
 }
 
-copy() {
-    log "removing: $2"
-    if [[ $dry_run == "0" ]]; then
-        rm $2
-    fi
-    log "copying: $1 to $2"
-    if [[ $dry_run == "0" ]]; then
-        cp $1 $2
-    fi
-}
-
 update_files() {
     log "copying over files from: $1"
-    pushd $1 &> /dev/null
-    (
-        configs=`find . -mindepth 1 -maxdepth 1 -type d`
-        for c in $configs; do
-            directory=${2%/}/${c#./}
-            log "    removing: rm -rf $directory"
-
-            if [[ $dry_run == "0" ]]; then
-                rm -rf $directory
-            fi
-
-            log "    copying env: cp $c $2"
-            if [[ $dry_run == "0" ]]; then
-                cp -r ./$c $2
-            fi
-        done
-
-    )
-    popd &> /dev/null
+    pushd "$1" > /dev/null
+    while IFS= read -r -d '' c; do
+        target="${2%/}/${c#./}"
+        log "    removing: rm -rf $target"
+        if [[ "$dry_run" == "0" ]]; then
+            rm -rf "$target"
+        fi
+        log "    copying env: cp -r $c $2"
+        if [[ "$dry_run" == "0" ]]; then
+            cp -r "$c" "$2"
+        fi
+    done < <(find . -mindepth 1 -maxdepth 1 -type d -print0)
+    popd > /dev/null
 }
 
-update_files $script_dir/env/.config $XDG_CONFIG_HOME
-update_files $script_dir/env/.local $HOME/.local
+update_files "$script_dir/env/.config" "$XDG_CONFIG_HOME"
 
-copy $script_dir/env/.zsh_profile $HOME/.zsh_profile
-copy $script_dir/env/.gitconfig $HOME/.gitconfig
+copy "$script_dir/env/.zsh_profile" "$HOME/.zsh_profile"
+copy "$script_dir/env/.gitconfig" "$HOME/.gitconfig"
