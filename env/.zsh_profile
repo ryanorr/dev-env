@@ -18,8 +18,4 @@ addToPathFront() {
 
 addToPath $HOME/.local/scripts
 
-export mf1="rorr@192.168.1.106"
-export mf2="rorr@192.168.1.191"
-export mf3="rorr@192.168.1.77"
-
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
